@@ -32,7 +32,7 @@
   close.setAttribute('aria-label', 'Close panel');
   close.style.cssText = 'border:0;border-radius:6px;background:#334155;color:#fff;width:28px;height:28px;font-size:20px;line-height:1;cursor:pointer;';
   close.addEventListener('click', function () {
-    panel.remove();
+    Mod.close();
   });
 
   var message = document.createElement('p');
@@ -44,6 +44,16 @@
   panel.appendChild(header);
   panel.appendChild(message);
   document.body.appendChild(panel);
+
+  // The loader calls this mod-specific hook when the mod is disabled or removed.
+  // Keep it safe to call more than once.
+  var closed = false;
+  Mod.close = function () {
+    if (closed) return;
+    closed = true;
+    panel.remove();
+    console.log('Test Mod cleanup complete.');
+  };
 
   console.log('Test Mod loaded and created its own panel.');
 })();
