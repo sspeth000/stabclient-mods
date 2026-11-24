@@ -55,9 +55,9 @@ The mod is responsible for creating and managing its own interface. There is no 
 - Mods can use normal JavaScript and browser DOM APIs.
 - Each mod receives a separate `Mod` object.
 - The currently supported lifecycle hook is `Mod.close()`.
-- The loader currently downloads and executes only the manifest's `entry` script.
+- The loader downloads and executes only the manifest's `entry` script.
+- The manifest does not need a `resources` section.
 - A mod can fetch and interpret its own additional files, regardless of extension, using normal browser APIs.
-- The manifest's resource lists are descriptive only right now; the loader does not automatically fetch them.
 - Installed mods start disabled after a full page reload.
 - Removing a mod saves the removal and refreshes the page.
 - Disabling a mod calls its cleanup hook, but a refresh is still recommended to guarantee that any resources it failed to clean up are cleared.
@@ -86,12 +86,6 @@ mods/
   "author": "Your Name",
   "description": "A small example mod.",
   "entry": "main.js",
-  "resources": {
-    "scripts": ["main.js"],
-    "styles": [],
-    "html": [],
-    "assets": []
-  },
   "permissions": []
 }
 ```
@@ -166,7 +160,7 @@ stabfish-mods/
 
 You can organize each mod's files however you like, as long as the manifest's `entry` points to the correct JavaScript file and the path is valid.
 
-**Current limitation:** The loader only fetches the entry script. It does not automatically load `helpers.js`, `styles.css`, HTML files, or other files listed in the manifest. A mod can fetch its own additional files from its repository, as shown in [Working with arbitrary files and formats](#working-with-arbitrary-files-and-formats). Do not assume that listing a file in `resources` makes the loader fetch it.
+The loader fetches only the entry script. It does not scan the mod folder or automatically load helper scripts, stylesheets, HTML, or assets. The mod can fetch any additional files it needs, as shown in [Working with arbitrary files and formats](#working-with-arbitrary-files-and-formats).
 
 ---
 
@@ -188,7 +182,7 @@ Avoid spaces and unusual punctuation in folder names. Use relative paths in the 
 
 ## Writing manifest.json
 
-The manifest describes your mod and tells the loader which script to execute.
+The manifest describes your mod and identifies the one JavaScript entry script the loader should execute. Additional files are fetched and handled by the mod itself.
 
 ### Complete example
 
@@ -222,7 +216,7 @@ The manifest describes your mod and tells the loader which script to execute.
 | `author` | Descriptive | Mod author's name or handle. |
 | `description` | Descriptive | Short explanation of the mod. |
 | `entry` | Yes | Relative path to the JavaScript entry file. |
-| `resources` | Reserved | Optional descriptive metadata for files used by the mod. The loader currently ignores these lists and only loads `entry`. |
+
 | `permissions` | Yes | Must be an array. Keep it empty; no permission system is currently implemented. |
 
 The loader validates the manifest version, matching ID, entry path, and that `permissions` is an array. Keep all fields correctly typed and use valid JSON.
@@ -774,7 +768,7 @@ The loader currently fetches:
 - The manifest.
 - The JavaScript file specified by `entry`.
 
-It does not automatically load the manifest's `resources` lists or scan the mod folder. Additional files must currently be fetched by the mod's own entry script. There are no extension-specific handlers: the mod chooses how to interpret the response, whether as text, JSON, a Blob, an ArrayBuffer, or another representation.
+It does not scan the mod folder or load a `resources` list. Additional files must be fetched by the mod's own entry script. There are no extension-specific handlers: the mod chooses how to interpret each response, whether as text, JSON, a Blob, an ArrayBuffer, or another representation.
 
 ### Lifecycle and disabling
 
