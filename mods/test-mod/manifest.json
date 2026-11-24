@@ -7,10 +7,12 @@
   "description": "A simple test that displays a closable panel.",
   "entry": "main.js",
   "resources": {
-    "scripts": ["main.js"],
+    "scripts": [
+      "main.js"
+    ],
     "styles": [],
     "html": [],
     "assets": []
   },
-  "permissions": ["custom-ui"]
+  "permissions": []
 }
