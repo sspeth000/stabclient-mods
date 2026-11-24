@@ -16,6 +16,7 @@ This guide explains how to create a mod, organize its files, write its manifest,
 - [Creating a mod folder](#creating-a-mod-folder)
 - [Writing manifest.json](#writing-manifestjson)
 - [Writing main.js](#writing-mainjs)
+- [Working with arbitrary files and formats](#working-with-arbitrary-files-and-formats)
 - [The Mod object and Mod.close()](#the-mod-object-and-modclose)
 - [Building a UI panel](#building-a-ui-panel)
 - [Cleaning up event listeners and timers](#cleaning-up-event-listeners-and-timers)
@@ -55,7 +56,8 @@ The mod is responsible for creating and managing its own interface. There is no 
 - Each mod receives a separate `Mod` object.
 - The currently supported lifecycle hook is `Mod.close()`.
 - The loader currently downloads and executes only the manifest's `entry` script.
-- The other manifest resource lists are reserved for future support and are not automatically loaded yet.
+- A mod can fetch and interpret its own additional files, regardless of extension, using normal browser APIs.
+- The manifest's resource lists are descriptive only right now; the loader does not automatically fetch them.
 - Installed mods start disabled after a full page reload.
 - Removing a mod saves the removal and refreshes the page.
 - Disabling a mod calls its cleanup hook, but a refresh is still recommended to guarantee that any resources it failed to clean up are cleared.
@@ -164,7 +166,7 @@ stabfish-mods/
 
 You can organize each mod's files however you like, as long as the manifest's `entry` points to the correct JavaScript file and the path is valid.
 
-**Current limitation:** The loader only fetches the entry script. It does not yet automatically load `helpers.js`, `styles.css`, HTML files, or assets listed in the manifest. If your mod needs helper code today, put that code in `main.js` or include it directly in the entry file. You can still keep unused resource declarations as documentation for a future loader update, but do not assume they are loaded.
+**Current limitation:** The loader only fetches the entry script. It does not automatically load `helpers.js`, `styles.css`, HTML files, or other files listed in the manifest. A mod can fetch its own additional files from its repository, as shown in [Working with arbitrary files and formats](#working-with-arbitrary-files-and-formats). Do not assume that listing a file in `resources` makes the loader fetch it.
 
 ---
 
@@ -220,7 +222,7 @@ The manifest describes your mod and tells the loader which script to execute.
 | `author` | Descriptive | Mod author's name or handle. |
 | `description` | Descriptive | Short explanation of the mod. |
 | `entry` | Yes | Relative path to the JavaScript entry file. |
-| `resources` | Reserved | Lists intended scripts, styles, HTML, and assets. Only `entry` is currently loaded. |
+| `resources` | Reserved | Optional descriptive metadata for files used by the mod. The loader currently ignores these lists and only loads `entry`. |
 | `permissions` | Yes | Must be an array. Keep it empty; no permission system is currently implemented. |
 
 The loader validates the manifest version, matching ID, entry path, and that `permissions` is an array. Keep all fields correctly typed and use valid JSON.
@@ -292,6 +294,86 @@ For example, prefer `hello-mod-panel` over a generic ID such as `panel`.
 
 ---
 
+## Working with arbitrary files and formats
+
+**The loader is not a file-format interpreter. The mod decides what each file means and how to use it.**
+
+A mod may need images, stylesheets, JSON data, audio, fonts, binary data, or a completely custom file format. The loader should not need a special case for each extension. From the mod's point of view, a file is simply a resource that it can fetch and then process with the appropriate browser API or library.
+
+For example:
+
+- Fetch text and parse it as JSON.
+- Fetch bytes with `response.arrayBuffer()` for binary formats.
+- Turn bytes into a `Blob` or object URL when an API expects a URL.
+- Pass data to a library, decoder, emulator, or parser included by the mod.
+- Display media using browser elements when the browser supports that format.
+
+A file extension alone does not guarantee that the browser can interpret a format. If a format needs a decoder, emulator, or third-party library, the mod is responsible for providing and using it.
+
+### Example mod-owned resource loading
+
+Today, the entry script can fetch additional files directly from the mod repository. Use the raw GitHub URL for the mod's folder:
+
+```js
+(function () {
+  'use strict';
+
+  const MOD_BASE =
+    'https://raw.githubusercontent.com/sspeth000/stabfish-mods/main/mods/hello-mod/';
+
+  async function fetchBytes(path) {
+    const url = new URL(path, MOD_BASE);
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error('Could not load mod resource: ' + path);
+    }
+
+    return response.arrayBuffer();
+  }
+
+  let objectUrl = null;
+
+  async function start() {
+    // The mod chooses how to interpret the bytes.
+    const bytes = await fetchBytes('assets/example.bin');
+
+    // Example only: create a Blob URL for an API that accepts one.
+    const blob = new Blob([bytes], {
+      type: 'application/octet-stream'
+    });
+
+    objectUrl = URL.createObjectURL(blob);
+
+    // Pass objectUrl to the format-specific library or API your mod uses.
+    // The loader does not decide what this binary file represents.
+  }
+
+  start().catch(error => console.error('[hello-mod]', error));
+
+  Mod.close = function () {
+    if (objectUrl) {
+      URL.revokeObjectURL(objectUrl);
+      objectUrl = null;
+    }
+  };
+})();
+```
+
+Replace `hello-mod` with your actual mod folder and `assets/example.bin` with the resource path. The example treats the file as raw bytes; your mod can instead use `response.text()`, `response.json()`, `response.blob()`, or another suitable method.
+
+### Important: what works today
+
+- The loader fetches the manifest and executes the JavaScript file specified by `entry`.
+- The entry script can use `fetch()` to retrieve additional files from the mod repository.
+- The mod itself decides how to parse, display, decode, or otherwise use those files.
+- The loader does not automatically download every file in the mod folder.
+- The loader does not currently provide a resource registry, automatic asset map, or format-specific handlers.
+- Any object URLs, event listeners, DOM elements, timers, or other resources created by the mod should be cleaned up in `Mod.close()`.
+
+This keeps the design format-agnostic: adding a new file type does not require adding a new file-type branch to the loader. The mod supplies the logic needed to use that file.
+
+---
 ## The Mod object and Mod.close()
 
 `Mod` is the lifecycle object supplied to your mod by the loader. Each mod receives its own object, so one mod's cleanup function does not overwrite another mod's cleanup function.
@@ -692,7 +774,7 @@ The loader currently fetches:
 - The manifest.
 - The JavaScript file specified by `entry`.
 
-It does not yet automatically load the manifest's `resources.scripts`, `resources.styles`, `resources.html`, or `resources.assets` arrays.
+It does not automatically load the manifest's `resources` lists or scan the mod folder. Additional files must currently be fetched by the mod's own entry script. There are no extension-specific handlers: the mod chooses how to interpret the response, whether as text, JSON, a Blob, an ArrayBuffer, or another representation.
 
 ### Lifecycle and disabling
 
