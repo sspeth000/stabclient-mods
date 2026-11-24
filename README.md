@@ -195,12 +195,6 @@ The manifest describes your mod and identifies the one JavaScript entry script t
   "author": "Your Name",
   "description": "A short description of what this mod does.",
   "entry": "main.js",
-  "resources": {
-    "scripts": ["main.js"],
-    "styles": [],
-    "html": [],
-    "assets": []
-  },
   "permissions": []
 }
 ```
