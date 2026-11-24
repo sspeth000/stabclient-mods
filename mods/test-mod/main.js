@@ -1,4 +1,6 @@
-// Test Mod: creates its own panel directly in the page.
+// Test Mod entry script: creates its own panel directly in the page.
+// The manifest points to this file with `entry`; additional resources, if needed,
+// would be fetched and handled by the mod itself.
 // No loader UI API or manifest-provided panel is used.
 (function () {
   'use strict';
