@@ -6,9 +6,10 @@
       "name": "Test Mod",
       "version": "1.0.0",
       "author": "Bash",
-      "description": "Catalog smoke test. Use this entry to check loading, searching, and install-state controls. It does not execute code or change the game.",
+      "description": "Displays a closable panel to verify manifest parsing, script loading, and the mod UI API.",
       "category": "Testing",
-      "homepage": "https://github.com/sspeth000/stabfish-mods"
+      "homepage": "https://github.com/sspeth000/stabfish-mods",
+      "manifest": "mods/test-mod/manifest.json"
     }
   ]
 }
