@@ -14,5 +14,9 @@
     "html": [],
     "assets": []
   },
-  "permissions": []
+  "permissions": [],
+  "panel": {
+    "title": "Test Mod",
+    "message": "Mod loading works."
+  }
 }
