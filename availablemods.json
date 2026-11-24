@@ -6,7 +6,7 @@
       "name": "Test Mod",
       "version": "1.0.0",
       "author": "Bash",
-      "description": "Displays a closable panel to verify manifest parsing, script loading, and the mod UI API.",
+      "description": "Displays a closable panel to verify manifest parsing and script loading.",
       "category": "Testing",
       "homepage": "https://github.com/sspeth000/stabfish-mods",
       "manifest": "mods/test-mod/manifest.json"
