@@ -14,9 +14,9 @@
     {
       "id": "invincible-flight",
       "name": "Invincible Flight",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": "Bash",
-      "description": "Adds a touch-friendly flight toggle, directional joystick, and boost control.",
+      "description": "Adds touch-friendly flight controls with smooth acceleration, braking, and boost for the active StabFish player.",
       "category": "Gameplay",
       "homepage": "https://github.com/sspeth000/stabclient-mods",
       "manifest": "mods/invincible-flight/manifest.json"
