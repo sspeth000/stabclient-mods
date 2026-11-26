@@ -1,0 +1,10 @@
+{
+  "manifestVersion": 1,
+  "id": "invincible-flight",
+  "name": "Invincible Flight",
+  "version": "0.1.0",
+  "author": "Bash",
+  "description": "Adds a touch-friendly flight toggle, directional joystick, and boost control.",
+  "entry": "main.js",
+  "permissions": []
+}
