@@ -1,6 +1,6 @@
-# Stabfish Mods
+# Stabclient Mods
 
-Welcome to the **Stabfish Mods** repository! This repository contains mods for the StabClient mod loader.
+Welcome to the **StabClient Mods** repository! This repository contains mods for the StabClient mod loader.
 
 This guide explains how to create a mod, organize its files, write its manifest, add it to the catalog, use the mod lifecycle hook, test it, and publish updates.
 
