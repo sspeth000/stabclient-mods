@@ -5,7 +5,6 @@
   var existing = document.getElementById(MOD_ID + '-root');
   if (existing) existing.remove();
 
-  var canvas = document.getElementById('stage');
   var events = new AbortController();
   var closed = false;
   var enabled = false;
@@ -14,6 +13,17 @@
   var boostHeld = false;
   var axis = { x: 0, y: 0 };
   var raf = 0;
+  var lastFrameTime = 0;
+  var currentSpeed = 0;
+  var lastAim = null;
+  var sentMove = false;
+  var sentBoost = false;
+  var savedSpeed = window.__playerSpeed;
+  var hadSavedSpeed = Object.prototype.hasOwnProperty.call(window, '__playerSpeed');
+  var BASE_SPEED = Number(savedSpeed) > 0 ? Number(savedSpeed) : 8;
+  var MAX_FLIGHT_SPEED = 260;
+  var ACCELERATION = 1800;
+  var BRAKING = 1400;
 
   var root = document.createElement('div');
   root.id = MOD_ID + '-root';
@@ -78,39 +88,54 @@
     status.textContent = message;
   }
 
-  function canvasPoint(x, y) {
-    if (!canvas) return null;
-    var rect = canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height) return null;
-    return {
-      x: rect.left + rect.width * (0.5 + x * 0.38),
-      y: rect.top + rect.height * (0.5 + y * 0.38)
-    };
+  function getController() {
+    var stage = window.__stageControl;
+    if (!stage || !stage.gameStarted || !stage.myPlayer || !stage.broadcaster) return null;
+    var broadcaster = stage.broadcaster;
+    if (typeof broadcaster.aim !== 'function' ||
+        typeof broadcaster.move !== 'function' ||
+        typeof broadcaster.boost !== 'function') return null;
+    return { stage: stage, player: stage.myPlayer, broadcaster: broadcaster };
   }
 
-  function emitPointer(type, x, y, buttons) {
-    if (!canvas) return;
-    var p = canvasPoint(x, y);
-    if (!p) return;
-    var event;
-    try {
-      event = new PointerEvent(type, {
-        bubbles: true, cancelable: true, composed: true,
-        pointerId: 731, pointerType: 'mouse', isPrimary: true,
-        clientX: p.x, clientY: p.y, button: 0, buttons: buttons || 0
-      });
-    } catch (_) {
-      event = new MouseEvent(type === 'pointermove' ? 'mousemove' : type, {
-        bubbles: true, cancelable: true, clientX: p.x, clientY: p.y,
-        button: 0, buttons: buttons || 0
-      });
+  function sendMove(value) {
+    var controller = getController();
+    if (!controller || sentMove === value) return;
+    sentMove = value;
+    try { controller.broadcaster.move(value); } catch (error) {
+      setStatus('Movement control unavailable');
     }
-    canvas.dispatchEvent(event);
+  }
+
+  function sendBoost(value) {
+    var controller = getController();
+    if (!controller || sentBoost === value) return;
+    sentBoost = value;
+    try { controller.broadcaster.boost(value); } catch (error) {
+      setStatus('Boost control unavailable');
+    }
   }
 
   function aim() {
-    if (!enabled || !canvas) return;
-    emitPointer('pointermove', axis.x, axis.y, boostHeld ? 1 : 0);
+    if (!enabled) return;
+    var controller = getController();
+    if (!controller) return;
+    var magnitude = Math.hypot(axis.x, axis.y);
+    if (magnitude < 0.04) return;
+    var angle = Math.atan2(axis.y, axis.x) * 180 / Math.PI;
+    if (lastAim === null || Math.abs(((angle - lastAim + 540) % 360) - 180) > 0.5) {
+      lastAim = angle;
+      try { controller.broadcaster.aim(angle); } catch (error) {
+        setStatus('Direction control unavailable');
+      }
+    }
+  }
+
+  function restoreSpeed() {
+    if (hadSavedSpeed) window.__playerSpeed = savedSpeed;
+    else {
+      try { delete window.__playerSpeed; } catch (_) { window.__playerSpeed = undefined; }
+    }
   }
 
   function setAxisFromPointer(event) {
@@ -136,7 +161,6 @@
     axis.x = 0;
     axis.y = 0;
     knob.style.transform = 'translate(0,0)';
-    if (enabled) aim();
   }
 
   function stopBoost() {
@@ -144,7 +168,7 @@
     boostHeld = false;
     boost.setAttribute('aria-pressed', 'false');
     root.classList.remove('if-boosting');
-    emitPointer('pointerup', axis.x, axis.y, 0);
+    sendBoost(false);
   }
 
   function setEnabled(value) {
@@ -155,9 +179,14 @@
     if (!enabled) {
       resetStick();
       stopBoost();
+      sendMove(false);
+      currentSpeed = 0;
+      lastAim = null;
+      restoreSpeed();
       setStatus('Flight controls paused');
     } else {
-      setStatus('Flight controls active');
+      lastFrameTime = 0;
+      setStatus(getController() ? 'Flight controls active' : 'Join a game to fly');
       aim();
     }
   }
@@ -196,8 +225,8 @@
     boostHeld = true;
     boost.setAttribute('aria-pressed', 'true');
     root.classList.add('if-boosting');
+    sendBoost(true);
     aim();
-    emitPointer('pointerdown', axis.x, axis.y, 1);
     setStatus('Boost engaged');
   }, { signal: events.signal });
 
@@ -215,9 +244,43 @@
     stopBoost();
   }, { signal: events.signal });
 
-  function frame() {
+  function frame(now) {
     if (closed) return;
-    if (enabled && joystickPointer !== null) aim();
+    if (enabled) {
+      var controller = getController();
+      if (controller) {
+        var dt = lastFrameTime ? Math.min((now - lastFrameTime) / 1000, 0.05) : 0;
+        lastFrameTime = now;
+        var magnitude = Math.min(1, Math.hypot(axis.x, axis.y));
+        var targetSpeed = magnitude > 0.04 ? MAX_FLIGHT_SPEED * magnitude : 0;
+        var rate = targetSpeed > currentSpeed ? ACCELERATION : BRAKING;
+        var difference = targetSpeed - currentSpeed;
+        var change = rate * dt;
+        currentSpeed += Math.max(-change, Math.min(change, difference));
+        if (magnitude > 0.04) aim();
+
+        var speedRatio = Math.max(0.01, Math.min(1, currentSpeed / MAX_FLIGHT_SPEED));
+        window.__playerSpeed = BASE_SPEED * speedRatio;
+
+        if (currentSpeed > 0.8) {
+          sendMove(true);
+        } else {
+          currentSpeed = 0;
+          sendMove(false);
+        }
+        sendBoost(boostHeld);
+
+        var p = controller.player;
+        setStatus('FLIGHT ACTIVE  ·  X ' + Math.round(p.x) +
+          '  Y ' + Math.round(p.y) +
+          '  SPEED ' + Math.round(speedRatio * 100) + '%');
+      } else {
+        lastFrameTime = now;
+        setStatus('Waiting for active player…');
+      }
+    } else {
+      lastFrameTime = 0;
+    }
     raf = requestAnimationFrame(frame);
   }
   raf = requestAnimationFrame(frame);
