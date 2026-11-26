@@ -8,7 +8,7 @@
       "author": "Bash",
       "description": "Displays a closable panel to verify manifest parsing and script loading.",
       "category": "Testing",
-      "homepage": "https://github.com/sspeth000/stabfish-mods",
+      "homepage": "https://github.com/sspeth000/stabclient-mods",
       "manifest": "mods/test-mod/manifest.json"
     }
   ]
