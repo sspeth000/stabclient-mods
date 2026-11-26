@@ -34,7 +34,7 @@ This guide explains how to create a mod, organize its files, write its manifest,
 The mod loader and the mods live in separate repositories:
 
 - **Client / loader:** `sspeth000/stabclient`
-- **Mod repository:** `sspeth000/stabfish-mods`
+- **Mod repository:** `sspeth000/stabclient-mods`
 
 The loader reads `availablemods.json` from this repository. That catalog tells the client which mods are available and where their manifests are located.
 
@@ -139,7 +139,7 @@ Open StabClient, open the Mods tab, refresh the catalog, install the mod, and en
 A recommended repository layout looks like this:
 
 ```text
-stabfish-mods/
+stabclient-mods/
 │
 ├── availablemods.json
 ├── README.md
@@ -307,7 +307,7 @@ Today, the entry script can fetch additional files directly from the mod reposit
   'use strict';
 
   const MOD_BASE =
-    'https://raw.githubusercontent.com/sspeth000/stabfish-mods/main/mods/hello-mod/';
+    'https://raw.githubusercontent.com/sspeth000/stabclient-mods/main/mods/hello-mod/';
 
   async function fetchBytes(path) {
     const url = new URL(path, MOD_BASE);
@@ -618,7 +618,7 @@ It contains a `schemaVersion` and a `mods` array.
       "author": "Your Name",
       "description": "A small example mod.",
       "category": "Example",
-      "homepage": "https://github.com/sspeth000/stabfish-mods",
+      "homepage": "https://github.com/sspeth000/stabclient-mods",
       "manifest": "mods/hello-mod/manifest.json"
     }
   ]
