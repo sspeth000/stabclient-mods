@@ -10,6 +10,16 @@
       "category": "Testing",
       "homepage": "https://github.com/sspeth000/stabclient-mods",
       "manifest": "mods/test-mod/manifest.json"
+    },
+    {
+      "id": "invincible-flight",
+      "name": "Invincible Flight",
+      "version": "0.1.0",
+      "author": "Bash",
+      "description": "Adds a touch-friendly flight toggle, directional joystick, and boost control.",
+      "category": "Gameplay",
+      "homepage": "https://github.com/sspeth000/stabclient-mods",
+      "manifest": "mods/invincible-flight/manifest.json"
     }
   ]
 }
