@@ -88,6 +88,33 @@
     status.textContent = message;
   }
 
+  // Flight owns game input while enabled. Events originating from this mod's
+  // controls are allowed through; normal page/game input is suppressed.
+  var blockedInputEvents = [
+    'keydown', 'keyup', 'keypress',
+    'pointerdown', 'pointerup', 'pointermove', 'pointercancel',
+    'mousedown', 'mouseup', 'mousemove',
+    'touchstart', 'touchmove', 'touchend', 'touchcancel',
+    'wheel', 'contextmenu'
+  ];
+
+  function blockGameInput(event) {
+    if (!enabled || root.contains(event.target)) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') {
+      event.stopImmediatePropagation();
+    }
+  }
+
+  blockedInputEvents.forEach(function (type) {
+    window.addEventListener(type, blockGameInput, {
+      capture: true,
+      passive: false,
+      signal: events.signal
+    });
+  });
+
   function getController() {
     var stage = window.__stageControl;
     if (!stage || !stage.gameStarted || !stage.myPlayer || !stage.broadcaster) return null;
