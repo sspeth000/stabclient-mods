@@ -1,6 +1,7 @@
 # Stabclient Mods
 
 Welcome to the **StabClient Mods** repository! This repository contains mods for the StabClient mod loader.
+The actual StabClient Repository is in this link: https://github.com/sspeth000/stabclient/tree/main
 
 This guide explains how to create a mod, organize its files, write its manifest, add it to the catalog, use the mod lifecycle hook, test it, and publish updates.
 
